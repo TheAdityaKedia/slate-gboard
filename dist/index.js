@@ -151,22 +151,46 @@ function GboardPlugin() {
         var ind = diffs[0].count;
 
         if (diffs[1].removed === true) {
-          // Some text was removed - update selection and delete character
-          selection.collapseToStart().move(ind);
-          change.deleteCharBackward();
+          if (diffs[1].count === 1) {
+            // Set selection, delete char
+            selection.collapseToStart().move(ind);
+            change.deleteCharBackward();
+          } else {
+            // There is a selection of text - continue with core Slate behavior
+            updateTextAndSelection(change, textContent, text, point, start, end, leaf.marks);
+          }
         }
       }
     } else {
       // Continue with default behavior
-      var delta = textContent.length - text.length;
-      var corrected = selection.collapseToEnd().move(delta);
-      var entire = selection.moveAnchorTo(point.key, start).moveFocusTo(point.key, end);
-
-      change.insertTextAtRange(entire, textContent, leaf.marks).select(corrected);
+      updateTextAndSelection(change, textContent, text, point, start, end, leaf.marks);
     }
 
     // Prevent Core onInput after plugin
     return false;
+  }
+
+  /**
+   * Extracted helper method from Slate's core after onInput method. Some situations
+   * require default Slate behavior.
+   *
+   * @param {Change} change
+   * @param {String} textContent
+   * @param {String} text
+   * @param {Object} point
+   * @param {Number} start
+   * @param {Number} end
+   * @param {Object} marks
+   */
+
+  function updateTextAndSelection(change, textContent, text, point, start, end, marks) {
+    // Determine what the selection should be after changing the text.
+    var selection = change.value.selection;
+    var delta = textContent.length - text.length;
+    var corrected = selection.collapseToEnd().move(delta);
+    var entire = selection.moveAnchorTo(point.key, start).moveFocusTo(point.key, end);
+
+    change.insertTextAtRange(entire, textContent, marks).select(corrected);
   }
 
   /**

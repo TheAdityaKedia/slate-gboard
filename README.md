@@ -29,6 +29,8 @@ The same procedure to detect a character deletion is used for selection delete a
 
 Selection delete behavior actually works in Slate core without this plugin, but the logic for the deletion workaround takes priority over Slate's core behavior, so we have to patch this functionality back in.
 
+Using Slate Selections was considered, but did not work after testing because the Selection is cleared when the delete key is pressed.
+
 ### Delete Node/Mark
 This functionality is not supported yet.
 

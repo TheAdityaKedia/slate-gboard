@@ -41,6 +41,29 @@ function GboardPlugin() {
   var isComposing = false;
 
   /**
+   * On before input, correct any browser inconsistencies.
+   *
+   * @param {Event} event
+   * @param {Change} change
+   * @param {Editor} editor
+   */
+
+  function onBeforeInput(event, change, editor) {
+    event.preventDefault();
+    change.insertText(event.data);
+
+    // Handles auto-correct auto-insertion
+    if (_environment.IS_ANDROID) {
+      // Remove composing flag because Gboard autocorrect automatically
+      // inserts the corrected text
+      isComposing = false;
+    }
+
+    // Prevent Core after plugin call
+    return false;
+  }
+
+  /**
    * On composition end. Handle text entry into Editor.
    *
    * @param {Event} event
@@ -200,6 +223,7 @@ function GboardPlugin() {
    */
 
   return {
+    onBeforeInput: onBeforeInput,
     onCompositionEnd: onCompositionEnd,
     onCompositionStart: onCompositionStart,
     onInput: onInput

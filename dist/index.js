@@ -39,6 +39,9 @@ var debug = (0, _debug2.default)('slate:gboard');
 function GboardPlugin() {
   var compositionCount = 0;
   var isComposing = false;
+  // Keeps track of what the user wanted to enter into the editor
+  // Using a variable allows us to control when to insert text
+  var textToInsert = '';
 
   /**
    * On before input, correct any browser inconsistencies.
@@ -49,14 +52,36 @@ function GboardPlugin() {
    */
 
   function onBeforeInput(event, change, editor) {
-    event.preventDefault();
-    change.insertText(event.data);
+    // Local variable to combine our text inserts so we don't end up
+    // calling change.inserText() multiple times
+    var localInsert = '';
 
-    // Handles auto-correct auto-insertion
+    event.preventDefault();
     if (_environment.IS_ANDROID) {
-      // Remove composing flag because Gboard autocorrect automatically
-      // inserts the corrected text
-      isComposing = false;
+      // Handle inserting of spaces if no composition has started
+      // Check for textToInsert has to happen to prevent double-space entries
+      if (event.data !== '' && textToInsert === '') {
+        localInsert += event.data;
+      }
+
+      // Handle insertion from onCompositionEnd
+      if (textToInsert !== '') {
+        localInsert += textToInsert + event.data;
+        // Clear for next onCompositionEnd
+        textToInsert = '';
+      }
+
+      // To determine when autocorrect has kicked in
+      if (isComposing) {
+        // Do nothing for now
+      }
+    } else {
+      // Handle non-Android normally
+      localInsert += event.data;
+    }
+
+    if (localInsert !== '') {
+      change.insertText(localInsert);
     }
 
     // Prevent Core after plugin call
@@ -85,7 +110,8 @@ function GboardPlugin() {
     if (_environment.IS_ANDROID && isComposing) {
       if (event.data !== '') {
         // TODO: Do not insert text if the cursor is in the middle of text
-        change.insertText(event.data);
+        // Track what the user wanted to input so we can insert it in onBeforeInput
+        textToInsert = event.data;
       }
     }
 
